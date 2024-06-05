@@ -1,5 +1,6 @@
 package cn.straosp.keepaccount.plugins
 
+import cn.straosp.keepaccount.controller.userController
 import io.ktor.resources.*
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
@@ -12,20 +13,6 @@ import kotlinx.serialization.Serializable
 fun Application.configureRouting() {
     install(Resources)
     routing {
-        get("/") {
-            call.respondText("Hello World!")
-        }
-        get<Articles> { article ->
-            // Get all articles ...
-            call.respond("List of articles sorted starting from ${article.sort}")
-        }
-        // Static plugin. Try to access `/static/index.html`
-        static("/static") {
-            resources("static")
-        }
+        userController()
     }
 }
-
-@Serializable
-@Resource("/articles")
-class Articles(val sort: String? = "new")

@@ -1,1 +1,1 @@
-rootProject.name = "com.example.keepaccount"
+rootProject.name = "cn.straosp.keepaccount"

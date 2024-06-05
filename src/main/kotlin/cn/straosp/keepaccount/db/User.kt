@@ -8,7 +8,13 @@ import org.ktorm.schema.varchar
 
 
 @Serializable
-data class User(val username: String,val phone:String)
+data class User(val username: String,val phone:String){
+
+    companion object{
+        val parameterList = "{username:String,phone:String}"
+    }
+
+}
 
 interface UserTable : Entity<UserTable> {
     companion object : Entity.Factory<UserTable>()
@@ -22,3 +28,5 @@ object UserTables : Table<UserTable>("user") {
     val username = varchar("username").bindTo { it.username }
     val phone = varchar("phone").bindTo { it.phone }
 }
+
+fun  UserTable.toUser(): User = User(username = this.username,phone = this.phone)

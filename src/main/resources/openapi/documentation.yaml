@@ -4,20 +4,20 @@ info:
   description: "Application API"
   version: "1.0.0"
 servers:
-  - url: "http://0.0.0.0:8080"
+  - url: "http://127.0.0.1:8080"
 paths:
-  /:
-    get:
-      description: "Hello World!"
-      responses:
-        "200":
-          description: "OK"
-          content:
-            text/plain:
-              schema:
-                type: "string"
-              examples:
-                Example#1:
-                  value: "Hello World!"
+    /user/getAllUser:
+      post:
+        description: "获取所有用户"
+        response:
+          "200":
+            description: "查询成功"
+            content:
+              application/json:
+                schema:
+                  type: "json"
+                examples:
+                  success:
+                    values: "{\"code\": 200,\"message\": \"查询成功\",\"data\": [{\"username\": \"小明\",\"phone\": \"123456789\"}]}"
 components:
   schemas: {}

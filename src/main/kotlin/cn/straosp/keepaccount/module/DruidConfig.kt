@@ -6,21 +6,27 @@ data class DruidConfig(
     val  url:String,
     val user:String,
     val driver:String,
-    val password:String?
+    val password:String?,
+    val defaultConnectSize: Int,
+    val maxConnectSize: Int,
+    val maxWaitTime: Int
+
 )
 
 interface DruidConfigRepository {
-    fun getDruidConfig(applicationConfig: ApplicationConfig = ApplicationConfig(null)):DruidConfig
+    fun getDruidConfig():DruidConfig
 }
 
 class DruidConfigRepositoryImpl : DruidConfigRepository {
-    override fun getDruidConfig(applicationConfig: ApplicationConfig): DruidConfig {
-        val mysqlConfig = applicationConfig.config("database.mysql")
+    override fun getDruidConfig(): DruidConfig {
         return DruidConfig(
-            url = mysqlConfig.property("url").getString(),
-            user = mysqlConfig.property("user").getString(),
-            driver = mysqlConfig.property("driver").getString(),
-            password = mysqlConfig.property("password").getString()
+            url = "jdbc:mysql://127.0.0.1:3306/keep_account",
+            user = "root",
+            driver = "com.mysql.cj.jdbc.Driver",
+            password = "12345678",
+            defaultConnectSize = 10,
+            maxConnectSize = 20,
+            maxWaitTime = 1000,
         )
     }
 }

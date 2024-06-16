@@ -9,7 +9,11 @@ import org.ktorm.schema.int
 import java.time.LocalDate
 
 @Serializable
-data class WorkRecords(val teamSize:Int,val productPrice:Double,val productQuantity:Int,val workDate:String)
+data class WorkRecords(val teamSize:Int,val productPrice:Double,val productQuantity:Int,val workDate:String,val users:List<Int>) {
+    companion object{
+        val parameterList = "teamSize:Int,productPrice:Double,productQuantity:Int,workDate:String,users:List<Int>"
+    }
+}
 
 interface WorkRecordsTable: Entity<WorkRecordsTable> {
 

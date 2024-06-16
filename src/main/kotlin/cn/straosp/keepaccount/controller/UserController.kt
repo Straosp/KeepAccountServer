@@ -1,11 +1,10 @@
 package cn.straosp.keepaccount.controller
 
 import cn.straosp.keepaccount.db.User
-import cn.straosp.keepaccount.db.UserTable
-import cn.straosp.keepaccount.db.UserTables
 import cn.straosp.keepaccount.service.UserService
 import cn.straosp.keepaccount.util.RequestResult
 import io.ktor.server.application.*
+import io.ktor.server.auth.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -14,9 +13,11 @@ import org.koin.ktor.ext.inject
 fun Routing.userController() {
     val userService by inject<UserService>()
     route("/user"){
-        post("/getAllUser"){
-            val users = userService.getAllUser()
-            call.respond(RequestResult.selectSuccess(users))
+        authenticate("headerAuth"){
+            post("/getAllUser"){
+                val users = userService.getAllUser()
+                call.respond(RequestResult.selectSuccess(users))
+            }
         }
         post("/login"){
             val phone = kotlin.runCatching { call.receive<String>() }.getOrNull() ?: ""

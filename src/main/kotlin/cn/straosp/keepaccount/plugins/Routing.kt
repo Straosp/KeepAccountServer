@@ -1,6 +1,7 @@
 package cn.straosp.keepaccount.plugins
 
 import cn.straosp.keepaccount.controller.userController
+import cn.straosp.keepaccount.controller.workRecordsController
 import io.ktor.resources.*
 import io.ktor.server.application.*
 import io.ktor.server.http.content.*
@@ -14,5 +15,6 @@ fun Application.configureRouting() {
     install(Resources)
     routing {
         userController()
+        workRecordsController()
     }
 }

@@ -1,5 +1,6 @@
 package cn.straosp.keepaccount.db
 
+import cn.straosp.keepaccount.db.UserWorkTables.references
 import org.ktorm.entity.Entity
 import org.ktorm.schema.Table
 import org.ktorm.schema.int

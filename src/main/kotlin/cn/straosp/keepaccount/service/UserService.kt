@@ -8,5 +8,6 @@ interface UserService {
     fun login(phone:String):User?
     fun register(user: User):User
     fun getAllUser():List<User>
+    fun userAuth(phone: String):User?
 
 }

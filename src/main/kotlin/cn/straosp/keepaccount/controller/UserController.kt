@@ -34,7 +34,7 @@ fun Routing.userController() {
         }
         post("/register"){
             try {
-                val user = kotlin.runCatching { call.receive<User>() }.getOrNull() ?: User("","")
+                val user = kotlin.runCatching { call.receive<User>() }.getOrNull() ?: User(0,"","")
                 if (user.phone.isEmpty() || user.username.isEmpty()){
                     call.respond(RequestResult.parameterError(User.parameterList))
                 } else {

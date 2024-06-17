@@ -33,7 +33,7 @@ class UserServiceImpl : UserService {
     override fun getAllUser(): List<User> {
         return AppDatabase.database.from(UserTables).select()
             .map {row ->
-                User(username = row[UserTables.username] ?: "", phone = row[UserTables.phone] ?: "")
+                User(id = row[UserTables.id] ?: 0,username = row[UserTables.username] ?: "", phone = row[UserTables.phone] ?: "")
             }.toList()
     }
 

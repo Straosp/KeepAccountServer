@@ -7,6 +7,7 @@ interface WorkRecordsService {
     fun addWorkRecord(workRecords: WorkRecords)
     fun addWorkRecords(workRecords: List<WorkRecords>)
     fun getWorkRecordByDate(phone:String,date:String):WorkRecords?
+    fun getWorkRecordsByRangeDate(phone: String,startDate: String,endDate:String): List<WorkRecords>
     fun getAllWorkRecords(phone: String):List<WorkRecords>
 
 }

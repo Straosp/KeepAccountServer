@@ -17,16 +17,16 @@ class UserServiceImpl : UserService {
         return AppDatabase.database.sequenceOf(UserTables).find { it.phone eq  phone}?.toUser()
     }
 
-    override fun register(user: User) : User {
-        if (user.username.isEmpty() || user.phone.isEmpty()) throw IllegalParameterException()
+    override fun register(username:String,phone:String) : User? {
+        if (username.isEmpty() || phone.isEmpty()) throw IllegalParameterException()
         AppDatabase.database.useTransaction {
             val id = AppDatabase.database.insertAndGenerateKey(UserTables){
-                set(it.username,user.username)
-                set(it.phone,user.phone)
+                set(it.username,username)
+                set(it.phone,phone)
             }
             val lastUser = AppDatabase.database.sequenceOf(UserTables).find { it.id eq (id as Int) }
             assert(lastUser != null)
-            return lastUser?.toUser()!!
+            return lastUser?.toUser()
         }
     }
 

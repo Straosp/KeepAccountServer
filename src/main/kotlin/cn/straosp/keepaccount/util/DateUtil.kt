@@ -9,9 +9,22 @@ import java.time.format.DateTimeFormatter
  */
 fun String.toLocalDate(): LocalDate = if (this.isEmpty()) LocalDate.now() else LocalDate.parse(this, DateTimeFormatter.ISO_DATE)
 
-fun LocalDate.toTimestampString(): String {
+fun LocalDate.toTimestampString(): String = this.toTimestamp().toString()
+
+fun LocalDate.toTimestamp():Long {
     val localDateTime = this.atStartOfDay()
-    // 将 LocalDateTime 转换为时间戳
-    return (localDateTime.toEpochSecond(ZoneId.systemDefault().rules.getOffset(localDateTime)) * 1000L).toString()
+    return localDateTime.toEpochSecond(ZoneId.systemDefault().rules.getOffset(localDateTime)) * 1000L
 }
 fun LocalDate.toISODateString() = "${this.year}-${this.monthValue}-${this.dayOfMonth}"
+
+private val dayOfMonth = intArrayOf(0,31,28,31,30,31,30,31,31,30,31,30,31)
+fun Int.dayOfMonth(year:Int): Int {
+    if (this == 2) return isLeapYearAndFebruaryDays(year).second
+    if (this < 1 || this > 12) return 0
+    return dayOfMonth[this]
+}
+fun isLeapYearAndFebruaryDays(year: Int): Pair<Boolean, Int> {
+    val isLeapYear = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+    val februaryDays = if (isLeapYear) 29 else 28
+    return Pair(isLeapYear, februaryDays)
+}

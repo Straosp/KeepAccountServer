@@ -45,32 +45,8 @@ class UserServiceImpl : UserService {
             }.toList()
     }
 
-    override fun getWorkMateList(phone: String): List<User>? {
-        return AppDatabase.database.from(UserTables).select().where { UserTables.phone notEq phone }
-            .map {row ->
-                User(
-                    id = row[UserTables.id] ?: 0,
-                    username = row[UserTables.username] ?: "",
-                    phone = row[UserTables.phone] ?: "",
-                    status = row[UserTables.status] ?: 0
-                )
-            }.toList()
-    }
-
     override fun userAuth(phone: String): User? =
         AppDatabase.database.sequenceOf(UserTables).find {it.phone eq  phone}?.toUser()
-
-    override fun registerUserByManager(username: String,phone: String): Result<User> {
-        val localUser = AppDatabase.database.sequenceOf(UserTables).find { it.phone eq phone }?.toUser()
-        if (localUser != null) return Result.failure(OperationMessage(code = 10, errorMsg = "用户已存在"))
-        AppDatabase.database.insert(UserTables){
-            set(it.username,username)
-            set(it.phone,phone)
-            set(it.status,0)
-        }
-        return Result.success(User(0,username,phone,0))
-
-    }
 
     override fun deleteUser(phone: String) {
         AppDatabase.database.update(UserTables){

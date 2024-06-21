@@ -37,7 +37,7 @@ fun Routing.userController() {
                     call.respond(RequestResult.parameterError())
                 } else {
                     val result = userService.register(user.username,user.phone)
-                    call.respond(RequestResult.success("注册成功",result))
+                    call.respond(RequestResult.success("注册成功",Token(token = "${result?.username}:${result?.phone}".encodeBtoa())))
                 }
             }catch (e:Exception){
                 call.respond(RequestResult.error(e.message ?: ""))
@@ -57,24 +57,6 @@ fun Routing.userController() {
         authenticate("headerAuth"){
             post("/getAllUser"){
                 val users = userService.getAllUser()
-                call.respond(RequestResult.selectSuccess(users))
-            }
-            post("/registerNewUser"){
-                val user = kotlin.runCatching { call.receive<RegisterUser>() }.getOrNull() ?: RegisterUser("","")
-                if (user.phone.isEmpty() || user.username.isEmpty()){
-                    call.respond(RequestResult.parameterError())
-                } else {
-                    val result = userService.registerUserByManager(user.username,user.phone)
-                    result.getOrElse {
-                        val operationMessage = result.exceptionOrNull() as? OperationMessage
-                        call.respond(RequestResult.error(operationMessage?.errorMsg ?: "数据异常，请稍后重试"))
-                    }
-                    call.respond(RequestResult.success("注册成功",result))
-                }
-            }
-            post("/getWorkMateList"){
-                val loginUser = call.principal<UsernamePhoneTimeCheckPrincipal>()
-                val users = userService.getWorkMateList(loginUser?.phone ?: "")
                 call.respond(RequestResult.selectSuccess(users))
             }
             post("/deleteUser"){

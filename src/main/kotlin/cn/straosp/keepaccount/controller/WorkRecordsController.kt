@@ -38,6 +38,21 @@ fun Routing.workRecordsController(){
                 call.respond(RequestResult.success())
             }
 
+            post("/addWorkRecords"){
+                val records = runCatching { call.receive<List<AddWorkRecords>>() }.getOrNull()
+                if (records.isNullOrEmpty()){
+                    call.respond(RequestResult.parameterError())
+                    return@post
+                }
+                val loginUser = call.principal<UsernamePhoneTimeCheckPrincipal>()
+                val result = workRecordService.addWorkRecords(loginUser?.phone ?: "",records)
+                result.getOrElse {
+                    val operationMessage = result.exceptionOrNull() as? OperationMessage
+                    call.respond(RequestResult.error(operationMessage?.errorMsg ?: "数据异常，请稍后重试"))
+                }
+                call.respond(RequestResult.success())
+            }
+
             post("/getCurrentMonthWorkRecords"){
                 val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()!!
                 val records = workRecordService.getCurrentMonthWorkRecords(userAuth.phone ?: "")

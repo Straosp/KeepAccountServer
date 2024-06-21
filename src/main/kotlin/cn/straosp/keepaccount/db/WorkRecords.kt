@@ -9,11 +9,14 @@ import org.ktorm.schema.int
 import java.time.LocalDate
 
 @Serializable
-data class WorkRecords(val id:Int,val teamSize:Int,val productPrice:Double,val productQuantity:Int,val workDate:String,val users:List<User>) {
-    companion object{
-        const val parameterList = "teamSize:Int,productPrice:Double,productQuantity:Int,workDate:String,users:List<Int>"
-    }
-}
+data class WorkRecords(
+    val id:Int,
+    val teamSize:Int,
+    val productPrice:Double,
+    val productQuantity:Int,
+    val workDate:String,
+    val userId:Int
+    )
 
 interface WorkRecordsTable: Entity<WorkRecordsTable> {
 
@@ -23,6 +26,7 @@ interface WorkRecordsTable: Entity<WorkRecordsTable> {
     val productPrice:Double
     val productQuantity: Int
     val workDate:LocalDate
+    val userId:Int
 }
 
 object WorkRecordsTables : Table<WorkRecordsTable>("work_records") {
@@ -31,4 +35,5 @@ object WorkRecordsTables : Table<WorkRecordsTable>("work_records") {
     val productPrice = double("product_price").bindTo { it.productPrice }
     val productQuantity = int("product_quantity").bindTo { it.productQuantity }
     val workDate = date("work_date").bindTo { it.workDate }
+    val userId = int("user_id").bindTo { it.userId }
 }

@@ -22,7 +22,7 @@ data class RequestResult<T>(
         fun error(message: String) = RequestResult(101,message,null)
         fun <T> error(message: String,data:T) = RequestResult(102,message,data)
         fun error(code: Int,message: String) = RequestResult(code,message,null)
-        fun parameterError(params:String) = RequestResult(Constant.RESPONSE_ERROR_PARAMETER_CODE,"${Constant.RESPONSE_ERROR_PARAMETER_MESSAGE}${params}",null)
+        fun parameterError() = RequestResult(Constant.RESPONSE_ERROR_PARAMETER_CODE,Constant.RESPONSE_ERROR_PARAMETER_MESSAGE,null)
 
     }
 

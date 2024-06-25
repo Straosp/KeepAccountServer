@@ -9,7 +9,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
-group = "cn.straosp.keepaccount"
+group = "cn.straosp.keepaccount.service"
 version = "0.0.1"
 
 application {

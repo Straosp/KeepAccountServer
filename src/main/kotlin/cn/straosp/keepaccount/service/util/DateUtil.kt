@@ -35,3 +35,11 @@ fun getCurrentMonthLocalDate():Pair<LocalDate,LocalDate> {
     val monthV = localDate.monthValue
     return  Pair(first = LocalDate.of(year,monthV, 1), second = LocalDate.of(year, monthV,monthV.dayOfMonth(year)))
 }
+
+fun getCurrentYear():Int {
+    return  LocalDate.now().year
+}
+fun getCurrentMonth():Int {
+    return  LocalDate.now().monthValue
+}
+

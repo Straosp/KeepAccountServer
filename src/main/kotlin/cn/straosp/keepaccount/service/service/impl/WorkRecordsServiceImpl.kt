@@ -110,7 +110,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
 
     override fun getWorkRecordRangeYear(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
         val result = AppDatabase.database.useConnection { conn->
-            val sql = "select sum((wr.product_quantity * wr.product_price) / wr.team_size) as salary, " +
+            val sql = "select sum((wr.product_quantity * wr.product_price) / wr.team_size) as salary,sum(wr.product_quantity / wr.team_size) as quantity, " +
                     "DATE_FORMAT(wr.work_date,'%Y') as month from work_records as wr inner join user on wr.user_id = user.id " +
                     "where user.phone = ? AND wr.work_date >= ? AND wr.work_date <= ? group by month order by month;"
             conn.prepareStatement(sql).use{ statement ->
@@ -119,7 +119,8 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 statement.setString(3,"${endDate}-12-31")
                 statement.executeQuery().asIterable().map {row ->
                     WorkRecordsLineChart(
-                        workDate = row.getString(2),
+                        workDate = row.getString(3),
+                        monthQuantity =  row.getDouble(2),
                         salary = row.getDouble(1)
                     )
                 }.toList()
@@ -136,7 +137,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 endSplit[1].toInt(),
                 endSplit[1].toInt().dayOfMonth(endSplit[0].toInt())
             )
-            val sql = "select sum((wr.product_quantity * wr.product_price) / wr.team_size) as salary, " +
+            val sql = "select sum((wr.product_quantity * wr.product_price) / wr.team_size) as salary,sum(wr.product_quantity / wr.team_size) as quantity, " +
                     "DATE_FORMAT(wr.work_date,'%Y-%m') as month from work_records as wr inner join user on wr.user_id = user.id " +
                     "where user.phone = ? AND wr.work_date >= ? AND wr.work_date <= ? group by month order by month;"
             conn.prepareStatement(sql).use{ statement ->
@@ -145,7 +146,8 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 statement.setString(3, days.toISODateString())
                 statement.executeQuery().asIterable().map {row ->
                     WorkRecordsLineChart(
-                        workDate = row.getString(2),
+                        workDate = row.getString(3),
+                        monthQuantity =  row.getDouble(2),
                         salary = row.getDouble(1)
                     )
                 }.toList()
@@ -159,6 +161,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
             .innerJoin(UserTables, on = UserTables.id eq WorkRecordsTables.userId )
             .select(
                 WorkRecordsTables.workDate,
+                WorkRecordsTables.productQuantity.div(WorkRecordsTables.teamSize),
                 WorkRecordsTables.productPrice.toDouble().times(WorkRecordsTables.productQuantity.toDouble()).div(WorkRecordsTables.teamSize.toDouble())
             )
             .where {
@@ -170,7 +173,36 @@ class WorkRecordsServiceImpl : WorkRecordsService {
             .map {row ->
                 WorkRecordsLineChart(
                     workDate = row.getString(1) ?: "",
-                    salary = row.getDouble(2) ?: .0
+                    monthQuantity = row.getDouble(2) ?: .0,
+                    salary = row.getDouble(3) ?: .0
+                )
+            }
+        return workRecords
+    }
+
+
+    override fun getWorkRecordsByYearMonth(phone: String,year:Int,month:Int): List<AddWorkRecords> {
+        val workRecords = AppDatabase.database.from(WorkRecordsTables)
+            .innerJoin(UserTables, on = UserTables.id eq WorkRecordsTables.userId )
+            .select(
+                WorkRecordsTables.id,
+                WorkRecordsTables.teamSize,
+                WorkRecordsTables.productPrice,
+                WorkRecordsTables.productQuantity,
+                WorkRecordsTables.workDate,
+            )
+            .where {
+                val startDate = LocalDate.of(year,month,1)
+                val endDate = LocalDate.of(year,month,month.dayOfMonth(year))
+                (UserTables.phone eq phone) and WorkRecordsTables.workDate.between(LocalDateRange(startDate,endDate))
+            }
+            .orderBy(WorkRecordsTables.workDate.desc())
+            .map { row ->
+                AddWorkRecords(
+                    teamSize = row[WorkRecordsTables.teamSize] ?: 0,
+                    productPrice = row[WorkRecordsTables.productPrice] ?: .0,
+                    productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
+                    workDate = (row[WorkRecordsTables.workDate] ?: LocalDate.now()).toISODateString(),
                 )
             }
         return workRecords

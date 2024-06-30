@@ -19,9 +19,9 @@ class DruidConfigRepositoryImpl : DruidConfigRepository {
     override fun getDruidConfig(): DruidConfig {
         return DruidConfig(
             url = "jdbc:mysql://127.0.0.1:3306/keep_account",
-            user = "root",
+            user = "keep_account",
             driver = "com.mysql.cj.jdbc.Driver",
-            password = "12345678",
+            password = "785125ABCd/",
             defaultConnectSize = 10,
             maxConnectSize = 20,
             maxWaitTime = 1000,

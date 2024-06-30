@@ -6,11 +6,12 @@ val logback_version: String by project
 plugins {
     kotlin("jvm") version "2.0.0"
     id("io.ktor.plugin") version "2.3.11"
+    id("war")
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.0"
 }
 
 group = "cn.straosp.keepaccount.service"
-version = "0.0.1"
+version = "0.0.6"
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")
@@ -21,6 +22,11 @@ application {
 
 repositories {
     mavenCentral()
+}
+ktor {
+    fatJar {
+        archiveFileName.set("keepaccount-${version}.jar")
+    }
 }
 
 dependencies {
@@ -34,6 +40,7 @@ dependencies {
     implementation("io.ktor:ktor-server-swagger-jvm")
     implementation("io.ktor:ktor-server-openapi")
     implementation("io.ktor:ktor-server-cors-jvm")
+    implementation("io.ktor:ktor-server-cors:$ktor_version")
     implementation("io.ktor:ktor-server-compression-jvm")
     implementation("io.ktor:ktor-server-resources")
     implementation("io.ktor:ktor-server-host-common-jvm")
@@ -44,5 +51,6 @@ dependencies {
     implementation("io.insert-koin:koin-logger-slf4j:3.5.3")
     implementation("io.ktor:ktor-server-config-yaml:2.3.11")
     testImplementation("io.ktor:ktor-server-tests-jvm")
+    implementation("io.ktor:ktor-server-servlet:$ktor_version")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version")
 }

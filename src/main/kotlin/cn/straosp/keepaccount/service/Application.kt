@@ -13,7 +13,6 @@ fun Application.module() {
     configureSecurity()
     configureAdministration()
     configureSerialization()
-    //configureDatabases()
     configureHTTP()
     configureKoin()
     configureRouting()

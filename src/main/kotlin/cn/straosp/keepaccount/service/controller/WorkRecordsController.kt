@@ -1,13 +1,8 @@
 package cn.straosp.keepaccount.service.controller
 
 import cn.straosp.keepaccount.service.service.WorkRecordsService
-import cn.straosp.keepaccount.service.util.OperationMessage
-import cn.straosp.keepaccount.service.util.RequestResult
-import cn.straosp.keepaccount.service.util.UsernamePhoneTimeCheckPrincipal
-import cn.straosp.keepaccount.service.vo.AddWorkRecords
-import cn.straosp.keepaccount.service.vo.DeleteWorkRecordById
-import cn.straosp.keepaccount.service.vo.SelectWorkRecordsByRangeDate
-import cn.straosp.keepaccount.service.vo.UpdateWorkRecords
+import cn.straosp.keepaccount.service.util.*
+import cn.straosp.keepaccount.service.vo.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.request.*
@@ -37,7 +32,6 @@ fun Routing.workRecordsController(){
                 }
                 call.respond(RequestResult.success())
             }
-
             post("/addWorkRecords"){
                 val records = runCatching { call.receive<List<AddWorkRecords>>() }.getOrNull()
                 if (records.isNullOrEmpty()){
@@ -52,7 +46,6 @@ fun Routing.workRecordsController(){
                 }
                 call.respond(RequestResult.success())
             }
-
             post("/getCurrentMonthWorkRecords"){
                 val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()!!
                 val records = workRecordService.getCurrentMonthWorkRecords(userAuth.phone ?: "")
@@ -66,7 +59,6 @@ fun Routing.workRecordsController(){
                 }
                 call.respond(RequestResult.parameterError())
             }
-
             post("/updateWorkRecords"){
                 val records = runCatching { call.receive<UpdateWorkRecords>()  }.getOrNull()
                 if (null == records) {
@@ -82,7 +74,6 @@ fun Routing.workRecordsController(){
                     call.respond(RequestResult.success("更新成功"))
                 }
             }
-
             post("/getWorkRecordsRangeDay"){
                 val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
                 val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
@@ -119,7 +110,7 @@ fun Routing.workRecordsController(){
                     val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
                     val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
                     select?.let {
-                        if (select.startDate.toInt() - select.endDate.toInt() >= 0 || select.endDate.toInt() < select.startDate.toInt()){
+                        if (select.startDate.toInt() - select.endDate.toInt() > 0 || select.endDate.toInt() < select.startDate.toInt()){
                             call.respond(RequestResult.parameterError())
                         }else {
                             val records = workRecordService.getWorkRecordRangeYear(userAuth?.phone ?: "",select.startDate,select.endDate)
@@ -133,6 +124,16 @@ fun Routing.workRecordsController(){
                 }
 
             }
+            post("/getWorkRecordsByYearMonth"){
+                val yearMonth = runCatching { call.receive<SelectWorkRecordsByYearMonth>() }.getOrNull() ?: SelectWorkRecordsByYearMonth(0,0)
+                if (yearMonth.year < 2000 || yearMonth.year > getCurrentYear() || yearMonth.month > 12 || yearMonth.month < 1){
+                    call.respond(RequestResult.parameterError())
+                }
+                val loginUser = call.principal<UsernamePhoneTimeCheckPrincipal>()
+                val result = workRecordService.getWorkRecordsByYearMonth(loginUser?.phone ?: "",yearMonth.year,yearMonth.month)
+                call.respond(RequestResult.success(result))
+            }
+
         }
     }
 

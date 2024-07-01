@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "cn.straosp.keepaccount.service"
-version = "0.0.6"
+version = "0.0.9"
 
 application {
     mainClass.set("io.ktor.server.netty.EngineMain")

@@ -133,6 +133,15 @@ fun Routing.workRecordsController(){
                 val result = workRecordService.getWorkRecordsByYearMonth(loginUser?.phone ?: "",yearMonth.year,yearMonth.month)
                 call.respond(RequestResult.success(result))
             }
+            post("/getTotalSalaryByYear"){
+                val year = kotlin.runCatching { call.receive<YearSalary>() }.getOrNull() ?: YearSalary(year = 0)
+                if (year.year < 2000 || year.year > getCurrentYear()){
+                    call.respond(RequestResult.parameterError())
+                }
+                val user = call.principal<UsernamePhoneTimeCheckPrincipal>()
+                val salary = workRecordService.getTotalSalaryByYear(user?.phone ?: "",year.year)
+                call.respond(RequestResult.success(salary))
+            }
 
         }
     }

@@ -19,6 +19,7 @@ data class SelectWorkRecordsByRangeDate(val startDate:String,val endDate:String)
 data class WorkRecordsLineChart(
     val salary:Double,
     val monthQuantity:Double,
+    val singleWorkProductQuantity:Double,
     val workDate: String,
 )
 
@@ -58,4 +59,12 @@ data class DeleteWorkRecordById(
 data class SelectWorkRecordsByYearMonth(
     val year:Int,
     val month:Int
+)
+@Serializable
+data class YearSalary(
+    val year: Int
+)
+@Serializable
+data class YearSalaryResult(
+    val salary: Double
 )

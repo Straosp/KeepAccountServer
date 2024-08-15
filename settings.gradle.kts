@@ -1,1 +1,1 @@
-rootProject.name = "cn.straosp.keepaccount.service"
+rootProject.name = "KeepAccountServer"

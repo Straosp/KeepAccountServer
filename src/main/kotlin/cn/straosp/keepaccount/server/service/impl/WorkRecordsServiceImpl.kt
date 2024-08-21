@@ -132,6 +132,9 @@ class WorkRecordsServiceImpl : WorkRecordsService {
     }
 
     override fun getWorkRecordRangeMonth(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
+
+
+
         val result = AppDatabase.database.useConnection { conn->
             val endSplit = endDate.split("-")
             val days = LocalDate.of(

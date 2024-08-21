@@ -1,23 +1,703 @@
-openapi: "3.0.3"
+openapi: 3.0.3
 info:
-  title: "Application API"
-  description: "Application API"
-  version: "1.0.0"
-servers:
+  title: "KeepAccountServer"
+  description: ''
+  version: 1.0.0
+server:
   - url: "http://127.0.0.1:8080"
 paths:
-    /user/getAllUser:
-      post:
-        description: "获取所有用户"
-        response:
-          "200":
-            description: "查询成功"
-            content:
-              application/json:
-                schema:
-                  type: "json"
-                examples:
-                  success:
-                    values: "{\"code\": 200,\"message\": \"查询成功\",\"data\": [{\"username\": \"小明\",\"phone\": \"123456789\"}]}"
+  /user/getAllUser:
+    post:
+      summary: 获取所有用户
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic b2s6MTIzNvDU2Nzg5
+          schema:
+            type: string
+      responses:
+        '401':
+          description: 没有权限
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      security: []
+  /workRecords/getWorkRecordsRangeMonth:
+    post:
+      summary: 获取时间区间内按月计算的工资情况
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic b2s6MTIzNDU2Nzg5
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  title: 开始时间
+                  description: '2023-01-01'
+                endDate:
+                  type: string
+                  title: 结束时间
+                  description: '2023-01-31'
+              required:
+                - startDate
+                - endDate
+            example:
+              startDate: '1996-10-06'
+              endDate: '2005-08-31'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        teamSize:
+                          type: integer
+                        productPrice:
+                          type: integer
+                        productQuantity:
+                          type: integer
+                        workDate:
+                          type: string
+                        users:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              username:
+                                type: string
+                              phone:
+                                type: string
+                            required:
+                              - id
+                              - username
+                              - phone
+                required:
+                  - code
+                  - message
+                  - data
+      security: []
+  /workRecords/getWorkRecordsRangeDay:
+    post:
+      summary: 获取区间时间内每一天的工作记录
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic b2s6MTIzNDU2Nzg5
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  title: 开始时间
+                  description: '2023-01-01'
+                endDate:
+                  type: string
+                  title: 结束时间
+                  description: '2023-01-01'
+              required:
+                - startDate
+                - endDate
+            example:
+              startDate: '2024-06-01'
+              endDate: '2024-06-30'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      teamSize:
+                        type: integer
+                      productPrice:
+                        type: integer
+                      productQuantity:
+                        type: integer
+                      workDate:
+                        type: string
+                      users:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            username:
+                              type: string
+                            phone:
+                              type: string
+                          required:
+                            - id
+                            - username
+                            - phone
+                    required:
+                      - id
+                      - teamSize
+                      - productPrice
+                      - productQuantity
+                      - workDate
+                      - users
+                required:
+                  - code
+                  - message
+                  - data
+      security: []
+  /user/login:
+    post:
+      summary: 用户登录
+      deprecated: false
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone:
+                  type: string
+                  title: 手机号
+              required:
+                - phone
+            example:
+              phone: '18681223927'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                    required:
+                      - token
+                required:
+                  - code
+                  - message
+                  - data
+      security: []
+  /user/register:
+    post:
+      summary: 注册接口
+      deprecated: false
+      description: ''
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                  title: 用户名称
+                phone:
+                  type: string
+                  title: 手机号
+              required:
+                - username
+                - phone
+            example:
+              username: HHH
+              phone: '16650518753'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      username:
+                        type: string
+                      phone:
+                        type: string
+                    required:
+                      - id
+                      - username
+                      - phone
+                required:
+                  - code
+                  - message
+                  - data
+      security: []
+  /workRecords/getCurrentMonthWorkRecords:
+    post:
+      summary: 获取本月工作记录
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic MTIzOjEyMw==
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties: {}
+              required:
+                - 01J5APBNSHP72NPQPFJ1XY33E3
+            example: ''
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        teamSize:
+                          type: integer
+                        productPrice:
+                          type: integer
+                        productQuantity:
+                          type: integer
+                        workDate:
+                          type: string
+                        users:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                              username:
+                                type: string
+                              phone:
+                                type: string
+                            required:
+                              - id
+                              - username
+                              - phone
+                      required:
+                        - id
+                        - teamSize
+                        - productPrice
+                        - productQuantity
+                        - workDate
+                        - users
+                required:
+                  - code
+                  - message
+                  - data
+      security: []
+  /workRecords/getWorkRecordsRangeYear:
+    post:
+      summary: 获取时间区间内按照年计算的工资情况
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic SEhIOjE2NjUwNTE4NzUz
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  title: 开始时间
+                  description: '2023'
+                endDate:
+                  type: string
+                  title: 结束时间
+                  description: '2024'
+              required:
+                - startDate
+                - endDate
+            example:
+              startDate: '1986'
+              endDate: '1973'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  code:
+                    type: integer
+                  message:
+                    type: string
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        salary:
+                          type: integer
+                        workDate:
+                          type: string
+                      required:
+                        - salary
+                        - workDate
+                required:
+                  - code
+                  - message
+                  - data
+      security: []
+  /workRecords/addWorkRecords:
+    post:
+      summary: 添加多条工作记录
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic SEhIOjE2NjUwNTE4NzUz
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: object
+                properties:
+                  teamSize:
+                    type: integer
+                    title: 团队人数
+                  productQuantity:
+                    type: integer
+                    title: 产品数量
+                  productPrice:
+                    type: number
+                    title: 产品单价
+                  workDate:
+                    type: string
+                    title: 工作时间
+                    description: '2011-12-03'
+                required:
+                  - teamSize
+                  - productQuantity
+                  - productPrice
+                  - workDate
+            example: ''
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      security: []
+  /workRecords/addWorkRecord:
+    post:
+      summary: 条件单条工作记录
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic SEhIOjE2NjUwNTE4NzUz
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                teamSize:
+                  type: integer
+                  title: 团队人数
+                productQuantity:
+                  type: integer
+                  title: 产品数量
+                productPrice:
+                  type: number
+                  title: 产品单价
+                workDate:
+                  type: string
+                  title: 工作时间
+                  description: '2011-12-03'
+              required:
+                - teamSize
+                - productQuantity
+                - productPrice
+                - workDate
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      security: []
+  /workRecords/getWorkRecordsByYearMonth:
+    post:
+      summary: 根据年月获取获取月工作记录
+      deprecated: false
+      description: ''
+      parameters:
+        - name: Authorization
+          in: header
+          description: ''
+          required: false
+          example: Basic SEhIOjE2NjUwNTE4NzUz
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                startDate:
+                  type: string
+                  title: 开始时间
+                  description: 2023-01
+                endDate:
+                  type: string
+                  title: 结束时间
+                  description: 2023-05
+              required:
+                - startDate
+                - endDate
+            example:
+              startDate: '2023-11-16'
+              endDate: '2021-08-13'
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties: {}
+      security: []
 components:
-  schemas: {}
+  schemas:
+    SelectWorkRecordsByRangeYearMonth:
+      type: object
+      properties:
+        startDate:
+          type: string
+          title: 开始时间
+          description: 2023-01
+        endDate:
+          type: string
+          title: 结束时间
+          description: 2023-05
+      required:
+        - startDate
+        - endDate
+    SelectWorkRecordsByRangeYear:
+      type: object
+      properties:
+        startDate:
+          type: string
+          title: 开始时间
+          description: '2023'
+        endDate:
+          type: string
+          title: 结束时间
+          description: '2024'
+      required:
+        - startDate
+        - endDate
+    SelectWorkRecordsByRangeMonth:
+      type: object
+      properties:
+        startDate:
+          type: string
+          title: 开始时间
+          description: '2023-01-01'
+        endDate:
+          type: string
+          title: 结束时间
+          description: '2023-01-31'
+      required:
+        - startDate
+        - endDate
+    SelectWorkRecordsByRangeDate:
+      type: object
+      properties:
+        startDate:
+          type: string
+          title: 开始时间
+          description: '2023-01-01'
+        endDate:
+          type: string
+          title: 结束时间
+          description: '2023-01-01'
+      required:
+        - startDate
+        - endDate
+    UpdateWorkRecordByID:
+      type: object
+      properties:
+        id:
+          type: string
+          title: 记录id
+          description: ID 编号
+        teamSize:
+          type: integer
+          title: 团队人数
+        productQuantity:
+          type: integer
+          title: 产品数量
+        productPrice:
+          type: number
+          title: 产品单价
+        workDate:
+          type: string
+          title: 工作时间
+          description: '2011-12-03'
+      required:
+        - id
+        - teamSize
+        - productQuantity
+        - productPrice
+        - workDate
+    DeleteWorkRecordByID:
+      type: object
+      properties:
+        id:
+          type: string
+          title: 记录id
+          description: ID 编号
+      required:
+        - id
+    AddWorkRecord:
+      type: object
+      properties:
+        teamSize:
+          type: integer
+          title: 团队人数
+        productQuantity:
+          type: integer
+          title: 产品数量
+        productPrice:
+          type: number
+          title: 产品单价
+        workDate:
+          type: string
+          title: 工作时间
+          description: '2011-12-03'
+      required:
+        - teamSize
+        - productQuantity
+        - productPrice
+        - workDate
+    AccountRegister:
+      type: object
+      properties:
+        username:
+          type: string
+          title: 用户名称
+        phone:
+          type: string
+          title: 手机号
+      required:
+        - username
+        - phone
+    AccountLogin:
+      type: object
+      properties:
+        phone:
+          type: string
+          title: 手机号
+      required:
+        - phone
+  securitySchemes: {}
+servers: []

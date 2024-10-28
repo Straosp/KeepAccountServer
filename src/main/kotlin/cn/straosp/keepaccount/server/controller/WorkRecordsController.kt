@@ -9,18 +9,32 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
+import kotlin.runCatching
 
 fun Routing.workRecordsController(){
     val workRecordService by inject<WorkRecordsService>()
     route("/workRecords"){
         authenticate("headerAuth") {
             post("/addWorkRecord") {
+                // {teamSize: 0, workDate: 2024-10-28, productPrice: 10, singleQuantity: 10, productQuantity: 0}
                 val records = runCatching { call.receive<AddWorkRecords>() }.getOrNull()
                 if (null == records){
                     call.respond(RequestResult.parameterError())
                     return@post
                 }
-                if (records.teamSize < 1 || records.productPrice < 0.1 || records.productQuantity < 1 || records.workDate.isEmpty()){
+                if (records.singleQuantity > 0 && records.productQuantity > 0  && records.teamSize < 2){
+                    call.respond(RequestResult.parameterError())
+                    return@post
+                }
+                if (records.singleQuantity < 1 && records.productQuantity < 1){
+                    call.respond(RequestResult.parameterError())
+                    return@post
+                }
+                if (records.productPrice < 0.1){
+                    call.respond(RequestResult.parameterError())
+                    return@post
+                }
+                if (records.workDate.isEmpty()){
                     call.respond(RequestResult.parameterError())
                     return@post
                 }

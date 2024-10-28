@@ -18,13 +18,15 @@ interface DruidConfigRepository {
 class DruidConfigRepositoryImpl : DruidConfigRepository {
     override fun getDruidConfig(): DruidConfig {
         return DruidConfig(
-            url = "jdbc:mysql://127.0.0.1:3306/keep_account",
-            user = "keep_account",
+            url = "jdbc:mysql://10.10.10.10:3306/keep_account",
             driver = "com.mysql.cj.jdbc.Driver",
-            password = "785125ABCd/",
+            user = "keep_account",
+            password = "785125ABC",
             defaultConnectSize = 10,
             maxConnectSize = 20,
             maxWaitTime = 1000,
         )
     }
 }
+//user = "keep_account",
+//password = "785125ABCd/",

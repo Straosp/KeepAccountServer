@@ -28,6 +28,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 set(WorkRecordsTables.productQuantity,addWorkRecords.productQuantity)
                 set(WorkRecordsTables.workDate,addWorkRecords.workDate.toLocalDate())
                 set(WorkRecordsTables.userId,loginUser.id)
+                set(WorkRecordsTables.singleQuantity,addWorkRecords.singleQuantity)
             } as Int
             assert(workId != 0)
             return  Result.success(workId)
@@ -47,6 +48,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                     set(WorkRecordsTables.productQuantity,wr.productQuantity)
                     set(WorkRecordsTables.workDate,wr.workDate.toLocalDate())
                     set(WorkRecordsTables.userId,loginUser.id)
+                    set(WorkRecordsTables.singleQuantity,wr.singleQuantity)
                 }
             }
         }
@@ -58,6 +60,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
             set(WorkRecordsTables.teamSize,updateWorkRecords.teamSize)
             set(WorkRecordsTables.productPrice,updateWorkRecords.productPrice)
             set(WorkRecordsTables.productQuantity,updateWorkRecords.productQuantity)
+            set(WorkRecordsTables.singleQuantity,updateWorkRecords.singleQuantity)
             where {
                 WorkRecordsTables.id eq updateWorkRecords.id
             }
@@ -79,6 +82,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 WorkRecordsTables.teamSize,
                 WorkRecordsTables.productPrice,
                 WorkRecordsTables.productQuantity,
+                WorkRecordsTables.singleQuantity,
                 WorkRecordsTables.workDate,
                 UserTables.id,
                 UserTables.phone,
@@ -96,6 +100,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                     teamSize = row[WorkRecordsTables.teamSize] ?: 0,
                     productPrice = row[WorkRecordsTables.productPrice] ?: .0,
                     productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
+                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: 0,
                     workDate = (row[WorkRecordsTables.workDate] ?: LocalDate.now()).toISODateString(),
                     user = User(
                         id = row[UserTables.id] ?: 0,
@@ -132,9 +137,6 @@ class WorkRecordsServiceImpl : WorkRecordsService {
     }
 
     override fun getWorkRecordRangeMonth(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
-
-
-
         val result = AppDatabase.database.useConnection { conn->
             val endSplit = endDate.split("-")
             val days = LocalDate.of(
@@ -142,8 +144,13 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 endSplit[1].toInt(),
                 endSplit[1].toInt().dayOfMonth(endSplit[0].toInt())
             )
-            val sql = "select sum((wr.product_quantity * wr.product_price) / wr.team_size) as salary,sum(wr.product_quantity) as quantity, " +
-                    "SUM(CASE WHEN wr.team_size = 1 THEN product_quantity ELSE 0 END) as single_total,DATE_FORMAT(wr.work_date,'%Y-%m') as month " +
+            val sql = "select \n" +
+                    "sum(wr.product_quantity + wr.single_quantity) as quantity," +
+                    "sum(wr.single_quantity) as singleQuantity," +
+                    "SUM(CASE WHEN wr.single_quantity > 0 AND wr.product_quantity < 1 THEN wr.single_quantity * wr.product_price ELSE 0 END) as singleSalary," +
+                    "SUM(CASE WHEN wr.single_quantity < 1 AND wr.product_quantity > 0 THEN ((wr.product_quantity * wr.product_price) / wr.team_size) ELSE 0 END) as teamSalary," +
+                    "SUM( CASE WHEN wr.single_quantity > 0 AND wr.product_quantity > 0 THEN wr.single_quantity * wr.product_price + ((wr.product_quantity * wr.product_price) / wr.team_size ) ELSE 0 END ) as teamSingleSalary," +
+                    "DATE_FORMAT(wr.work_date,'%Y-%m') as month " +
                     "from work_records as wr inner join user on wr.user_id = user.id " +
                     "where user.phone = ? AND wr.work_date >= ? AND wr.work_date <= ? group by month order by month;"
             conn.prepareStatement(sql).use{ statement ->
@@ -152,10 +159,10 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 statement.setString(3, days.toISODateString())
                 statement.executeQuery().asIterable().map {row ->
                     WorkRecordsLineChart(
-                        workDate = row.getString(4),
-                        monthQuantity =  row.getDouble(2),
-                        singleWorkProductQuantity = row.getDouble(3),
-                        salary = row.getDouble(1)
+                        workDate = row.getString(6),
+                        monthQuantity =  row.getDouble(1),
+                        singleWorkProductQuantity = row.getDouble(2),
+                        salary = row.getDouble(3) + row.getDouble(4) + row.getDouble(5)
                     )
                 }.toList()
             }
@@ -197,6 +204,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 WorkRecordsTables.teamSize,
                 WorkRecordsTables.productPrice,
                 WorkRecordsTables.productQuantity,
+                WorkRecordsTables.singleQuantity,
                 WorkRecordsTables.workDate,
             )
             .where {
@@ -210,6 +218,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                     teamSize = row[WorkRecordsTables.teamSize] ?: 0,
                     productPrice = row[WorkRecordsTables.productPrice] ?: .0,
                     productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
+                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: 0,
                     workDate = (row[WorkRecordsTables.workDate] ?: LocalDate.now()).toISODateString(),
                 )
             }
@@ -217,11 +226,15 @@ class WorkRecordsServiceImpl : WorkRecordsService {
     }
 
     override fun getTotalSalaryByYear(phone: String, year: Int):YearSalaryResult {
-        val monthSalary = mutableListOf<Double>()
-        AppDatabase.database.from(WorkRecordsTables)
+        val result = AppDatabase.database.from(WorkRecordsTables)
             .innerJoin(UserTables, on = WorkRecordsTables.userId eq UserTables.id)
             .select(
-                WorkRecordsTables.productPrice.toDouble().times(WorkRecordsTables.productQuantity.toDouble()).div(WorkRecordsTables.teamSize.toDouble())
+                WorkRecordsTables.userId,
+                WorkRecordsTables.id,
+                WorkRecordsTables.teamSize,
+                WorkRecordsTables.productPrice,
+                WorkRecordsTables.productQuantity,
+                WorkRecordsTables.singleQuantity,
             )
             .where {
                 val startLocalDate = LocalDate.of(year,1,1)
@@ -229,9 +242,34 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 (UserTables.phone eq phone) and (WorkRecordsTables.workDate.between(LocalDateRange(startLocalDate,endDate)))
             }
             .map { row ->
-                monthSalary.add(row.getDouble(1) ?: .0)
+                WorkRecords(
+                    id = row[WorkRecordsTables.id] ?: 0,
+                    teamSize = row[WorkRecordsTables.teamSize] ?: 0,
+                    productPrice = row[WorkRecordsTables.productPrice] ?:  0.0,
+                    productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
+                    userId = row[WorkRecordsTables.userId] ?: 0,
+                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: 0,
+                    workDate = ""
+                )
             }
-        return YearSalaryResult(monthSalary.sum())
+        var totalSalary = 0.0
+        val salaryMap:MutableMap<Int,Double> = HashMap()
+        for (wr in result) {
+            if (wr.singleQuantity > 0){
+               totalSalary += wr.singleQuantity * wr.productPrice
+            }
+            //(wr.productPrice * wr.productQuantity).div(wr.teamSize)
+            if (wr.teamSize < 1) continue
+            if (salaryMap.containsKey(wr.teamSize)){
+                salaryMap[wr.teamSize] = (salaryMap.get(wr.teamSize) ?: 0.0) + wr.productPrice * wr.productQuantity
+            }else{
+                salaryMap[wr.teamSize] = wr.productPrice * wr.productQuantity
+            }
+        }
+        for (element in salaryMap.keys) {
+            totalSalary += (salaryMap[element] ?: 0.0).div(element)
+        }
+        return YearSalaryResult(totalSalary)
     }
 
 

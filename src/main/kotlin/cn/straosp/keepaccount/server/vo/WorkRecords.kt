@@ -29,6 +29,7 @@ data class WorkRecordsResult(
     val teamSize:Int,
     val productQuantity:Int,
     val productPrice:Double,
+    val singleQuantity: Int,
     val workDate:String,
     val user: User
 )
@@ -38,6 +39,7 @@ data class AddWorkRecords(
     val teamSize:Int,
     val productQuantity:Int,
     val productPrice:Double,
+    val singleQuantity:Int,
     val workDate:String,
 )
 
@@ -47,6 +49,7 @@ data class UpdateWorkRecords(
     val teamSize:Int,
     val productQuantity:Int,
     val productPrice:Double,
+    val singleQuantity: Int,
     val workDate:String,
 )
 

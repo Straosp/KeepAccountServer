@@ -15,7 +15,8 @@ data class WorkRecords(
     val productPrice:Double,
     val productQuantity:Int,
     val workDate:String,
-    val userId:Int
+    val userId:Int,
+    val singleQuantity:Int
     )
 
 interface WorkRecordsTable: Entity<WorkRecordsTable> {
@@ -27,6 +28,7 @@ interface WorkRecordsTable: Entity<WorkRecordsTable> {
     val productQuantity: Int
     val workDate:LocalDate
     val userId:Int
+    val singleQuantity:Int
 }
 
 object WorkRecordsTables : Table<WorkRecordsTable>("work_records") {
@@ -36,4 +38,5 @@ object WorkRecordsTables : Table<WorkRecordsTable>("work_records") {
     val productQuantity = int("product_quantity").bindTo { it.productQuantity }
     val workDate = date("work_date").bindTo { it.workDate }
     val userId = int("user_id").bindTo { it.userId }
+    val singleQuantity = int("single_quantity").bindTo { it.singleQuantity }
 }

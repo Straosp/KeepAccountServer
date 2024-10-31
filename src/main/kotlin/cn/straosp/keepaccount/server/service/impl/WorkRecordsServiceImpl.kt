@@ -115,8 +115,13 @@ class WorkRecordsServiceImpl : WorkRecordsService {
 
     override fun getWorkRecordRangeYear(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
         val result = AppDatabase.database.useConnection { conn->
-            val sql = "select sum((wr.product_quantity * wr.product_price) / wr.team_size) as salary,sum(wr.product_quantity / wr.team_size) as quantity, " +
-                    "SUM(CASE WHEN wr.team_size = 1 THEN product_quantity ELSE 0 END) as single_total,DATE_FORMAT(wr.work_date,'%Y') as month " +
+            val sql = "select " +
+                    "sum(wr.product_quantity + wr.single_quantity) as quantity," +
+                    "sum(wr.single_quantity) as singleQuantity," +
+                    "SUM(CASE WHEN wr.single_quantity > 0 AND wr.product_quantity < 1 THEN wr.single_quantity * wr.product_price ELSE 0 END) as singleSalary," +
+                    "SUM(CASE WHEN wr.single_quantity < 1 AND wr.product_quantity > 0 THEN ((wr.product_quantity * wr.product_price) / wr.team_size) ELSE 0 END) as teamSalary," +
+                    "SUM( CASE WHEN wr.single_quantity > 0 AND wr.product_quantity > 0 THEN wr.single_quantity * wr.product_price + ((wr.product_quantity * wr.product_price) / wr.team_size ) ELSE 0 END ) as teamSingleSalary," +
+                    "DATE_FORMAT(wr.work_date,'%Y') as month " +
                     "from work_records as wr inner join user on wr.user_id = user.id " +
                     "where user.phone = ? AND wr.work_date >= ? AND wr.work_date <= ? group by month order by month;"
             conn.prepareStatement(sql).use{ statement ->
@@ -125,10 +130,10 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 statement.setString(3,"${endDate}-12-31")
                 statement.executeQuery().asIterable().map {row ->
                     WorkRecordsLineChart(
-                        workDate = row.getString(4),
-                        monthQuantity =  row.getDouble(2),
-                        singleWorkProductQuantity = row.getDouble(3),
-                        salary = row.getDouble(1)
+                        workDate = row.getString(6),
+                        monthQuantity =  row.getDouble(1) + row.getDouble(2),
+                        singleWorkProductQuantity = row.getDouble(2),
+                        salary = row.getDouble(3) + row.getDouble(4) + row.getDouble(5)
                     )
                 }.toList()
             }
@@ -144,7 +149,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 endSplit[1].toInt(),
                 endSplit[1].toInt().dayOfMonth(endSplit[0].toInt())
             )
-            val sql = "select \n" +
+            val sql = "select " +
                     "sum(wr.product_quantity + wr.single_quantity) as quantity," +
                     "sum(wr.single_quantity) as singleQuantity," +
                     "SUM(CASE WHEN wr.single_quantity > 0 AND wr.product_quantity < 1 THEN wr.single_quantity * wr.product_price ELSE 0 END) as singleSalary," +
@@ -196,7 +201,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
     }
 
 
-    override fun getWorkRecordsByYearMonth(phone: String,year:Int,month:Int): List<AddWorkRecords> {
+    override fun getWorkRecordsByYearMonth(phone: String,year:Int,month:Int): List<HistoryWorkRecords> {
         val workRecords = AppDatabase.database.from(WorkRecordsTables)
             .innerJoin(UserTables, on = UserTables.id eq WorkRecordsTables.userId )
             .select(
@@ -214,7 +219,8 @@ class WorkRecordsServiceImpl : WorkRecordsService {
             }
             .orderBy(WorkRecordsTables.workDate.desc())
             .map { row ->
-                AddWorkRecords(
+                HistoryWorkRecords(
+                    id = row[WorkRecordsTables.id] ?: 0,
                     teamSize = row[WorkRecordsTables.teamSize] ?: 0,
                     productPrice = row[WorkRecordsTables.productPrice] ?: .0,
                     productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,

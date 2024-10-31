@@ -12,7 +12,7 @@ interface WorkRecordsService {
     fun getWorkRecordRangeYear(phone: String,startDate: String,endDate: String):List<WorkRecordsLineChart>
     fun getWorkRecordRangeMonth(phone: String,startDate: String,endDate: String):List<WorkRecordsLineChart>
     fun getWorkRecordRangeDay(phone: String,startDate: String,endDate: String):List<WorkRecordsLineChart>
-    fun getWorkRecordsByYearMonth(phone: String,year:Int,month:Int): List<AddWorkRecords>
+    fun getWorkRecordsByYearMonth(phone: String,year:Int,month:Int): List<HistoryWorkRecords>
     fun getTotalSalaryByYear(phone: String,year: Int):YearSalaryResult
 
 }

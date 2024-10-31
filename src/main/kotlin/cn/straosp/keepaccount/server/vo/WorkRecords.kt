@@ -42,6 +42,15 @@ data class AddWorkRecords(
     val singleQuantity:Int,
     val workDate:String,
 )
+@Serializable
+data class HistoryWorkRecords(
+    val id:Int,
+    val teamSize:Int,
+    val productQuantity:Int,
+    val productPrice:Double,
+    val singleQuantity:Int,
+    val workDate:String,
+)
 
 @Serializable
 data class UpdateWorkRecords(

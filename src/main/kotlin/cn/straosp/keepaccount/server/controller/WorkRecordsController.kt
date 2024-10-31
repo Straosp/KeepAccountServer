@@ -101,19 +101,20 @@ fun Routing.workRecordsController(){
                 try {
                     val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
                     val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
-                    select?.let {
-                        val startSplit = select.startDate.split("-")
-                        val endSplit = select.endDate.split("-")
-                        if (startSplit[0].toInt() > endSplit[0].toInt()){
-                            call.respond(RequestResult.parameterError())
-                        }else if (startSplit[0].toInt() >= endSplit[0].toInt() && startSplit[1].toInt() > endSplit[1].toInt()){
-                            call.respond(RequestResult.parameterError())
-                        }else{
-                            val records = workRecordService.getWorkRecordRangeMonth(userAuth?.phone ?: "",select.startDate,select.endDate)
-                            call.respond(RequestResult.success(records))
-                        }
+                    if (null == select){
+                        call.respond(RequestResult.parameterError())
+                        return@post
                     }
-                    call.respond(RequestResult.parameterError())
+                    val startSplit = select.startDate.split("-")
+                    val endSplit = select.endDate.split("-")
+                    if (startSplit[0].toInt() > endSplit[0].toInt()){
+                        call.respond(RequestResult.parameterError())
+                    }else if (startSplit[0].toInt() >= endSplit[0].toInt() && startSplit[1].toInt() > endSplit[1].toInt()){
+                        call.respond(RequestResult.parameterError())
+                    }else{
+                        val records = workRecordService.getWorkRecordRangeMonth(userAuth?.phone ?: "",select.startDate,select.endDate)
+                        call.respond(RequestResult.success(records))
+                    }
                 }catch (e:Exception){
                     call.respond(RequestResult.parameterError())
                 }
@@ -123,17 +124,19 @@ fun Routing.workRecordsController(){
                 try {
                     val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
                     val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
-                    select?.let {
-                        if (select.startDate.toInt() - select.endDate.toInt() > 0 || select.endDate.toInt() < select.startDate.toInt()){
-                            call.respond(RequestResult.parameterError())
-                        }else {
-                            val records = workRecordService.getWorkRecordRangeYear(userAuth?.phone ?: "",select.startDate,select.endDate)
-                            call.respond(RequestResult.success(records))
-                        }
+                    println("Phone: ${userAuth?.phone}")
+                    if (null == select){
+                        call.respond(RequestResult.parameterError())
                         return@post
                     }
-                    call.respond(RequestResult.parameterError())
+                    if (select.startDate.toInt() - select.endDate.toInt() > 0 || select.endDate.toInt() < select.startDate.toInt()){
+                        call.respond(RequestResult.parameterError())
+                    }else {
+                        val records = workRecordService.getWorkRecordRangeYear(userAuth?.phone ?: "",select.startDate,select.endDate)
+                        call.respond(RequestResult.success(records))
+                    }
                 }catch (e:Exception){
+                    e.printStackTrace()
                     call.respond(RequestResult.parameterError())
                 }
 

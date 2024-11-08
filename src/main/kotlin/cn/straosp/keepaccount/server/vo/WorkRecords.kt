@@ -3,14 +3,6 @@ package cn.straosp.keepaccount.server.vo
 import cn.straosp.keepaccount.server.db.User
 import kotlinx.serialization.Serializable
 
-@Serializable
-data class SelectWorkRecordsByDate(val date:String){
-    companion object{
-        fun parameterDescription():String {
-            return "date:[String,2024-06-07]"
-        }
-    }
-}
 
 @Serializable
 data class SelectWorkRecordsByRangeDate(val startDate:String,val endDate:String)
@@ -22,14 +14,21 @@ data class WorkRecordsLineChart(
     val singleWorkProductQuantity:Double,
     val workDate: String,
 )
+@Serializable
+data class WorkRecordsInRangeDate(
+    val totalSalary: Double,     // Year: 2023: 115.0 2024 345.0 Month: 1: 12.0 2: 23.0  Day: 1 /2/3 每天的每月的每年的总工资
+    val singleQuantity: Double,     // 在大区间内的单个区间内的个人产品总数
+    val teamQuantity: Double,       // 在大区间内的单个区间内团队产品总数
+    val workDate: String            // 时间:2024 / 2024-01 / 2024-01-01
+)
 
 @Serializable
 data class WorkRecordsResult(
     val id:Int,
     val teamSize:Int,
-    val productQuantity:Int,
+    val productQuantity:Double,
     val productPrice:Double,
-    val singleQuantity: Int,
+    val singleQuantity: Double,
     val workDate:String,
     val user: User
 )
@@ -37,29 +36,19 @@ data class WorkRecordsResult(
 @Serializable
 data class AddWorkRecords(
     val teamSize:Int,
-    val productQuantity:Int,
+    val productQuantity:Double,
     val productPrice:Double,
-    val singleQuantity:Int,
-    val workDate:String,
-)
-@Serializable
-data class HistoryWorkRecords(
-    val id:Int,
-    val teamSize:Int,
-    val productQuantity:Int,
-    val productPrice:Double,
-    val singleQuantity:Int,
+    val singleQuantity:Double,
     val workDate:String,
 )
 
 @Serializable
 data class UpdateWorkRecords(
     val id:Int,
-    val teamSize:Int,
-    val productQuantity:Int,
+    val teamSize:Int? = 0,
+    val productQuantity:Double? = .0,
     val productPrice:Double,
-    val singleQuantity: Int,
-    val workDate:String,
+    val singleQuantity: Double? = .0
 )
 
 @Serializable

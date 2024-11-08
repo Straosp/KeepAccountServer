@@ -9,6 +9,7 @@ import org.ktorm.entity.find
 import org.ktorm.entity.sequenceOf
 import java.time.LocalDate
 import cn.straosp.keepaccount.server.util.*
+import kotlin.math.sin
 
 class WorkRecordsServiceImpl : WorkRecordsService {
 
@@ -99,8 +100,8 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                     id = row[WorkRecordsTables.id] ?: 0,
                     teamSize = row[WorkRecordsTables.teamSize] ?: 0,
                     productPrice = row[WorkRecordsTables.productPrice] ?: .0,
-                    productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
-                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: 0,
+                    productQuantity = row[WorkRecordsTables.productQuantity] ?: .0,
+                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: .0,
                     workDate = (row[WorkRecordsTables.workDate] ?: LocalDate.now()).toISODateString(),
                     user = User(
                         id = row[UserTables.id] ?: 0,
@@ -113,95 +114,7 @@ class WorkRecordsServiceImpl : WorkRecordsService {
         return workRecords
     }
 
-    override fun getWorkRecordRangeYear(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
-        val result = AppDatabase.database.useConnection { conn->
-            val sql = "select " +
-                    "sum(wr.product_quantity + wr.single_quantity) as quantity," +
-                    "sum(wr.single_quantity) as singleQuantity," +
-                    "SUM(CASE WHEN wr.single_quantity > 0 AND wr.product_quantity < 1 THEN wr.single_quantity * wr.product_price ELSE 0 END) as singleSalary," +
-                    "SUM(CASE WHEN wr.single_quantity < 1 AND wr.product_quantity > 0 THEN ((wr.product_quantity * wr.product_price) / wr.team_size) ELSE 0 END) as teamSalary," +
-                    "SUM( CASE WHEN wr.single_quantity > 0 AND wr.product_quantity > 0 THEN wr.single_quantity * wr.product_price + ((wr.product_quantity * wr.product_price) / wr.team_size ) ELSE 0 END ) as teamSingleSalary," +
-                    "DATE_FORMAT(wr.work_date,'%Y') as month " +
-                    "from work_records as wr inner join user on wr.user_id = user.id " +
-                    "where user.phone = ? AND wr.work_date >= ? AND wr.work_date <= ? group by month order by month;"
-            conn.prepareStatement(sql).use{ statement ->
-                statement.setString(1,phone)
-                statement.setString(2,"${startDate}-01-01")
-                statement.setString(3,"${endDate}-12-31")
-                statement.executeQuery().asIterable().map {row ->
-                    WorkRecordsLineChart(
-                        workDate = row.getString(6),
-                        monthQuantity =  row.getDouble(1) + row.getDouble(2),
-                        singleWorkProductQuantity = row.getDouble(2),
-                        salary = row.getDouble(3) + row.getDouble(4) + row.getDouble(5)
-                    )
-                }.toList()
-            }
-        }
-        return result
-    }
-
-    override fun getWorkRecordRangeMonth(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
-        val result = AppDatabase.database.useConnection { conn->
-            val endSplit = endDate.split("-")
-            val days = LocalDate.of(
-                endSplit[0].toInt(),
-                endSplit[1].toInt(),
-                endSplit[1].toInt().dayOfMonth(endSplit[0].toInt())
-            )
-            val sql = "select " +
-                    "sum(wr.product_quantity + wr.single_quantity) as quantity," +
-                    "sum(wr.single_quantity) as singleQuantity," +
-                    "SUM(CASE WHEN wr.single_quantity > 0 AND wr.product_quantity < 1 THEN wr.single_quantity * wr.product_price ELSE 0 END) as singleSalary," +
-                    "SUM(CASE WHEN wr.single_quantity < 1 AND wr.product_quantity > 0 THEN ((wr.product_quantity * wr.product_price) / wr.team_size) ELSE 0 END) as teamSalary," +
-                    "SUM( CASE WHEN wr.single_quantity > 0 AND wr.product_quantity > 0 THEN wr.single_quantity * wr.product_price + ((wr.product_quantity * wr.product_price) / wr.team_size ) ELSE 0 END ) as teamSingleSalary," +
-                    "DATE_FORMAT(wr.work_date,'%Y-%m') as month " +
-                    "from work_records as wr inner join user on wr.user_id = user.id " +
-                    "where user.phone = ? AND wr.work_date >= ? AND wr.work_date <= ? group by month order by month;"
-            conn.prepareStatement(sql).use{ statement ->
-                statement.setString(1,phone)
-                statement.setString(2,"${startDate}-01")
-                statement.setString(3, days.toISODateString())
-                statement.executeQuery().asIterable().map {row ->
-                    WorkRecordsLineChart(
-                        workDate = row.getString(6),
-                        monthQuantity =  row.getDouble(1),
-                        singleWorkProductQuantity = row.getDouble(2),
-                        salary = row.getDouble(3) + row.getDouble(4) + row.getDouble(5)
-                    )
-                }.toList()
-            }
-        }
-        return result
-    }
-
-    override fun getWorkRecordRangeDay(phone: String, startDate: String, endDate: String): List<WorkRecordsLineChart> {
-        val workRecords = AppDatabase.database.from(WorkRecordsTables)
-            .innerJoin(UserTables, on = UserTables.id eq WorkRecordsTables.userId )
-            .select(
-                WorkRecordsTables.workDate,
-                WorkRecordsTables.productQuantity.div(WorkRecordsTables.teamSize),
-                WorkRecordsTables.productPrice.toDouble().times(WorkRecordsTables.productQuantity.toDouble()).div(WorkRecordsTables.teamSize.toDouble())
-            )
-            .where {
-                val startLocalDate = startDate.toLocalDate()
-                val endLocalDate = endDate.toLocalDate()
-                (UserTables.phone eq phone) and WorkRecordsTables.workDate.between(LocalDateRange(startLocalDate,endLocalDate))
-            }
-            .orderBy(WorkRecordsTables.workDate.desc())
-            .map {row ->
-                WorkRecordsLineChart(
-                    workDate = row.getString(1) ?: "",
-                    monthQuantity = row.getDouble(2) ?: .0,
-                    singleWorkProductQuantity = .0,
-                    salary = row.getDouble(3) ?: .0
-                )
-            }
-        return workRecords
-    }
-
-
-    override fun getWorkRecordsByYearMonth(phone: String,year:Int,month:Int): List<HistoryWorkRecords> {
+    override fun getMonthWorkRecords(phone: String, monthDate: LocalDate): List<WorkRecordsResult> {
         val workRecords = AppDatabase.database.from(WorkRecordsTables)
             .innerJoin(UserTables, on = UserTables.id eq WorkRecordsTables.userId )
             .select(
@@ -211,73 +124,128 @@ class WorkRecordsServiceImpl : WorkRecordsService {
                 WorkRecordsTables.productQuantity,
                 WorkRecordsTables.singleQuantity,
                 WorkRecordsTables.workDate,
+                UserTables.id,
+                UserTables.phone,
+                UserTables.username,
+                UserTables.status
             )
             .where {
-                val startDate = LocalDate.of(year,month,1)
-                val endDate = LocalDate.of(year,month,month.dayOfMonth(year))
+                val startDate = LocalDate.of(monthDate.year,monthDate.monthValue,1)
+                val endDate = LocalDate.of(monthDate.year,monthDate.monthValue,monthDate.monthValue.dayOfMonth(monthDate.year))
                 (UserTables.phone eq phone) and WorkRecordsTables.workDate.between(LocalDateRange(startDate,endDate))
             }
             .orderBy(WorkRecordsTables.workDate.desc())
-            .map { row ->
-                HistoryWorkRecords(
+            .map {row ->
+                WorkRecordsResult(
                     id = row[WorkRecordsTables.id] ?: 0,
                     teamSize = row[WorkRecordsTables.teamSize] ?: 0,
                     productPrice = row[WorkRecordsTables.productPrice] ?: .0,
-                    productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
-                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: 0,
+                    productQuantity = row[WorkRecordsTables.productQuantity] ?: .0,
+                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: .0,
                     workDate = (row[WorkRecordsTables.workDate] ?: LocalDate.now()).toISODateString(),
+                    user = User(
+                        id = row[UserTables.id] ?: 0,
+                        username = row[UserTables.username] ?: "",
+                        phone = row[UserTables.phone] ?: "",
+                        status = row[UserTables.status] ?: 0
+                    )
                 )
             }
         return workRecords
     }
 
-    override fun getTotalSalaryByYear(phone: String, year: Int):YearSalaryResult {
-        val result = AppDatabase.database.from(WorkRecordsTables)
-            .innerJoin(UserTables, on = WorkRecordsTables.userId eq UserTables.id)
+
+    override fun getWorkRecordsInRangeDate(phone: String, type:Int, startDate: LocalDate, endDate: LocalDate): List<WorkRecordsInRangeDate> {
+
+        val workRecordsRangeDate = AppDatabase.database.from(WorkRecordsTables)
+            .innerJoin(UserTables, on =  UserTables.id eq WorkRecordsTables.userId)
             .select(
-                WorkRecordsTables.userId,
-                WorkRecordsTables.id,
+                WorkRecordsTables.workDate,
                 WorkRecordsTables.teamSize,
                 WorkRecordsTables.productPrice,
-                WorkRecordsTables.productQuantity,
                 WorkRecordsTables.singleQuantity,
+                WorkRecordsTables.productQuantity
             )
             .where {
-                val startLocalDate = LocalDate.of(year,1,1)
-                val endDate = LocalDate.of(year,12,31)
-                (UserTables.phone eq phone) and (WorkRecordsTables.workDate.between(LocalDateRange(startLocalDate,endDate)))
+                WorkRecordsTables.workDate.between(LocalDateRange(startDate,endDate)) and (UserTables.phone eq phone)
             }
+            .orderBy(WorkRecordsTables.workDate.asc())
             .map { row ->
                 WorkRecords(
-                    id = row[WorkRecordsTables.id] ?: 0,
+                    id = 0,
+                    workDate = (row[WorkRecordsTables.workDate])?.toISODateString() ?: "",
                     teamSize = row[WorkRecordsTables.teamSize] ?: 0,
-                    productPrice = row[WorkRecordsTables.productPrice] ?:  0.0,
-                    productQuantity = row[WorkRecordsTables.productQuantity] ?: 0,
-                    userId = row[WorkRecordsTables.userId] ?: 0,
-                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: 0,
-                    workDate = ""
+                    productPrice = row[WorkRecordsTables.productPrice] ?: .0,
+                    singleQuantity = row[WorkRecordsTables.singleQuantity] ?: .0,
+                    productQuantity = row[WorkRecordsTables.productQuantity] ?: .0,
+                    userId = 0
                 )
             }
-        var totalSalary = 0.0
-        val salaryMap:MutableMap<Int,Double> = HashMap()
-        for (wr in result) {
-            if (wr.singleQuantity > 0){
-               totalSalary += wr.singleQuantity * wr.productPrice
-            }
-            //(wr.productPrice * wr.productQuantity).div(wr.teamSize)
-            if (wr.teamSize < 1) continue
-            if (salaryMap.containsKey(wr.teamSize)){
-                salaryMap[wr.teamSize] = (salaryMap.get(wr.teamSize) ?: 0.0) + wr.productPrice * wr.productQuantity
-            }else{
-                salaryMap[wr.teamSize] = wr.productPrice * wr.productQuantity
-            }
-        }
-        for (element in salaryMap.keys) {
-            totalSalary += (salaryMap[element] ?: 0.0).div(element)
-        }
-        return YearSalaryResult(totalSalary)
-    }
 
+        if (workRecordsRangeDate.isEmpty()){
+            return emptyList()
+        }
+        when (type) {
+            3 -> {
+                return workRecordsRangeDate.map { workRecord ->
+                    val totalSalary = (workRecord.singleQuantity * workRecord.productPrice) + (workRecord.productQuantity * workRecord.productPrice).div(workRecord.teamSize)
+                    WorkRecordsInRangeDate(
+                        totalSalary = totalSalary,
+                        singleQuantity = workRecord.singleQuantity,
+                        teamQuantity = workRecord.productQuantity,
+                        workDate = workRecord.workDate
+                    )
+                }
+            }
+            2 -> {
+                val workRecordsByMonth = workRecordsRangeDate.groupBy { it.workDate.toLocalDate().monthValue }
+                return workRecordsByMonth.map { keys ->
+                    val singleQuantity = keys.value.filter { it.singleQuantity > 0 }.sumOf { it.singleQuantity }  // 得到的就是月内的个人件数总和
+                    val teamQuantity = keys.value.filter { it.teamSize > 1 }.sumOf { it.productQuantity }   //得到的就是团队数量总和
+                    val totalSalary = keys.value.groupBy { it.teamSize }.mapValues {teamSizeKey ->
+                        if (teamSizeKey.key == 0){
+                            teamSizeKey.value.sumOf { it.singleQuantity * it.productPrice }
+                        }else{
+                            teamSizeKey.value.sumOf { (it.productPrice * it.productQuantity).plus(it.singleQuantity * it.productPrice) }.div(teamSizeKey.key)
+                        }
+                    }.values.sum()
+                    WorkRecordsInRangeDate(
+                        totalSalary = totalSalary,
+                        singleQuantity = singleQuantity,
+                        teamQuantity = teamQuantity,
+                        workDate = keys.value.first().workDate.take(7)
+                    )
+                }
+            }
+            else -> {
+                val workRecordsByMonth = workRecordsRangeDate.groupBy { it.workDate.toLocalDate().year }
+                return workRecordsByMonth.map { keys ->
+
+                    val teamQuantity = keys.value.filter { it.teamSize > 1 }.sumOf { it.productQuantity }   //得到的就是团队数量总和
+
+                    val singleQuantity = keys.value.filter { it.singleQuantity > 0 }.sumOf { it.singleQuantity }  // 得到的就是月内的个人件数总和
+
+                    val mixedTotalSalary = keys.value.filter { it.teamSize > 0 && it.singleQuantity  > 0 }.groupBy { it.teamSize }.map { mixedKeys ->
+                        mixedKeys.value.sumOf { (it.productPrice * it.productQuantity) }.div(mixedKeys.key)
+                            .plus(mixedKeys.value.sumOf { it.singleQuantity * it.productPrice })
+                    }.sum()
+                    val singleTotalSalary = keys.value.filter { it.teamSize == 0 && it.singleQuantity > 0 }.sumOf { it.singleQuantity * it.productPrice }
+
+                    val multiTotalSalary = keys.value.filter { it.teamSize > 0 && it.singleQuantity == .0 }.groupBy { it.teamSize }.map { multiKeys ->
+                        multiKeys.value.sumOf {
+                            (it.productPrice * it.productQuantity)
+                        }.div(multiKeys.key)
+                    }.sum()
+                    WorkRecordsInRangeDate(
+                        totalSalary = mixedTotalSalary + singleTotalSalary + multiTotalSalary,
+                        singleQuantity = singleQuantity,
+                        teamQuantity = teamQuantity,
+                        workDate = keys.value.first().workDate.take(4)
+                    )
+                }
+            }
+        }
+    }
 
 
 }

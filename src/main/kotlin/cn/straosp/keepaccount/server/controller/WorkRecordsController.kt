@@ -9,6 +9,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
+import java.time.LocalDate
 import kotlin.runCatching
 
 fun Routing.workRecordsController(){
@@ -60,11 +61,24 @@ fun Routing.workRecordsController(){
                 }
                 call.respond(RequestResult.success())
             }
+
             post("/getCurrentMonthWorkRecords"){
                 val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()!!
                 val records = workRecordService.getCurrentMonthWorkRecords(userAuth.phone ?: "")
                 call.respond(RequestResult.success(records))
             }
+            post("/getMonthWorkRecords"){
+                val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
+                val select = runCatching { call.receive<SelectWorkRecordsByYearMonth>() }.getOrNull()
+                if (null == userAuth || null == select){
+                    call.respond(RequestResult.parameterError())
+                    return@post
+                }
+
+                val records = workRecordService.getMonthWorkRecords(userAuth.phone, LocalDate.of(select.year,select.month,1))
+                call.respond(RequestResult.success(records))
+            }
+
             post("/deleteWorkRecordsById"){
                 val recordId = runCatching { call.receive<DeleteWorkRecordById>()  }.getOrNull()
                 recordId?.let {
@@ -75,9 +89,12 @@ fun Routing.workRecordsController(){
             }
             post("/updateWorkRecords"){
                 val records = runCatching { call.receive<UpdateWorkRecords>()  }.getOrNull()
+                val account =  call.principal<UsernamePhoneTimeCheckPrincipal>()
                 if (null == records) {
+                    println("Record == NULL")
                     call.respond(RequestResult.error("参数异常"))
-                }else if (records.productPrice < 0.1 || records.productQuantity < 1 || records.teamSize < 1){
+                }else if (records.productPrice < 0.1 || ((records.singleQuantity ?: .0) < 0 && (records.teamSize ?: 0) < 0)){
+                    println("Record == 1")
                     call.respond(RequestResult.error("参数异常"))
                 }else{
                     val result = workRecordService.updateWorkRecords(records)
@@ -88,76 +105,48 @@ fun Routing.workRecordsController(){
                     call.respond(RequestResult.success("更新成功"))
                 }
             }
-            post("/getWorkRecordsRangeDay"){
-                val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
-                val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
-                select?.let {
-                    val records = workRecordService.getWorkRecordRangeDay(userAuth?.phone ?: "",select.startDate,select.endDate)
-                    call.respond(RequestResult.success(records))
-                }
-                call.respond(RequestResult.parameterError())
-            }
-            post("/getWorkRecordsRangeMonth"){
+
+            post("/getWorkRecordsInRangeDate"){
                 try {
-                    val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
+                    val userAuth = runCatching { call.principal<UsernamePhoneTimeCheckPrincipal>() }.getOrNull()
                     val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
-                    if (null == select){
+                    if (null == userAuth || null == select) {
                         call.respond(RequestResult.parameterError())
                         return@post
                     }
-                    val startSplit = select.startDate.split("-")
-                    val endSplit = select.endDate.split("-")
-                    if (startSplit[0].toInt() > endSplit[0].toInt()){
-                        call.respond(RequestResult.parameterError())
-                    }else if (startSplit[0].toInt() >= endSplit[0].toInt() && startSplit[1].toInt() > endSplit[1].toInt()){
-                        call.respond(RequestResult.parameterError())
-                    }else{
-                        val records = workRecordService.getWorkRecordRangeMonth(userAuth?.phone ?: "",select.startDate,select.endDate)
-                        call.respond(RequestResult.success(records))
-                    }
-                }catch (e:Exception){
-                    call.respond(RequestResult.parameterError())
-                }
-
-            }
-            post("/getWorkRecordsRangeYear"){
-                try {
-                    val userAuth = call.principal<UsernamePhoneTimeCheckPrincipal>()
-                    val select = runCatching { call.receive<SelectWorkRecordsByRangeDate>() }.getOrNull()
-                    println("Phone: ${userAuth?.phone}")
-                    if (null == select){
+                    val startDateSplit = select.startDate.split("-")
+                    val endDateSplit = select.endDate.split("-")
+                    if (startDateSplit.size != endDateSplit.size){
                         call.respond(RequestResult.parameterError())
                         return@post
                     }
-                    if (select.startDate.toInt() - select.endDate.toInt() > 0 || select.endDate.toInt() < select.startDate.toInt()){
-                        call.respond(RequestResult.parameterError())
-                    }else {
-                        val records = workRecordService.getWorkRecordRangeYear(userAuth?.phone ?: "",select.startDate,select.endDate)
-                        call.respond(RequestResult.success(records))
+                    val startDate = when (startDateSplit.size) {
+                        3 -> {
+                            LocalDate.of(startDateSplit[0].toInt(),startDateSplit[1].toInt(),startDateSplit[2].toInt())
+                        }
+                        2 -> {
+                            LocalDate.of(startDateSplit[0].toInt(),startDateSplit[1].toInt(),1)
+                        }
+                        else -> {
+                            LocalDate.of(startDateSplit[0].toInt(),1,1)
+                        }
                     }
+                    val endDate = when (endDateSplit.size) {
+                        3 -> {
+                            LocalDate.of(endDateSplit[0].toInt(),endDateSplit[1].toInt(),endDateSplit[2].toInt())
+                        }
+                        2 -> {
+                            LocalDate.of(endDateSplit[0].toInt(),endDateSplit[1].toInt(), endDateSplit[1].toInt().dayOfMonth(endDateSplit[0].toInt()))
+                        }
+                        else -> {
+                            LocalDate.of(endDateSplit[0].toInt(),12,31)
+                        }
+                    }
+                    val result = workRecordService.getWorkRecordsInRangeDate(userAuth.phone,startDateSplit.size,startDate, endDate)
+                    call.respond(RequestResult.success(result))
                 }catch (e:Exception){
-                    e.printStackTrace()
                     call.respond(RequestResult.parameterError())
                 }
-
-            }
-            post("/getWorkRecordsByYearMonth"){
-                val yearMonth = runCatching { call.receive<SelectWorkRecordsByYearMonth>() }.getOrNull() ?: SelectWorkRecordsByYearMonth(0,0)
-                if (yearMonth.year < 2000 || yearMonth.year > getCurrentYear() || yearMonth.month > 12 || yearMonth.month < 1){
-                    call.respond(RequestResult.parameterError())
-                }
-                val loginUser = call.principal<UsernamePhoneTimeCheckPrincipal>()
-                val result = workRecordService.getWorkRecordsByYearMonth(loginUser?.phone ?: "",yearMonth.year,yearMonth.month)
-                call.respond(RequestResult.success(result))
-            }
-            post("/getTotalSalaryByYear"){
-                val year = kotlin.runCatching { call.receive<YearSalary>() }.getOrNull() ?: YearSalary(year = 0)
-                if (year.year < 2000 || year.year > getCurrentYear()){
-                    call.respond(RequestResult.parameterError())
-                }
-                val user = call.principal<UsernamePhoneTimeCheckPrincipal>()
-                val salary = workRecordService.getTotalSalaryByYear(user?.phone ?: "",year.year)
-                call.respond(RequestResult.success(salary))
             }
 
         }

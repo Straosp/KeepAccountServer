@@ -15,8 +15,17 @@ class WorkRecordsServiceImpl : WorkRecordsService {
 
     override fun addWorkRecord(phone: String,addWorkRecords: AddWorkRecords): Result<Int> {
         AppDatabase.database.useTransaction {
-            val result = AppDatabase.database.sequenceOf(WorkRecordsTables).find { it.workDate eq addWorkRecords.workDate.toLocalDate() }
-            if (result != null){
+            val result = AppDatabase.database.from(WorkRecordsTables)
+                .innerJoin(UserTables, on = WorkRecordsTables.userId eq UserTables.id)
+                .select(
+                    WorkRecordsTables.id
+                )
+                .where {
+                    WorkRecordsTables.workDate eq addWorkRecords.workDate.toLocalDate() and ( UserTables.phone eq phone )
+                }.map { row ->
+                    row[WorkRecordsTables.id]
+                }.toList() ?: emptyList()
+            if (result.isNotEmpty()){
                 return Result.failure(OperationMessage(20,"数据已存在"))
             }
             val loginUser = AppDatabase.database.sequenceOf(UserTables).find { it.phone eq phone }?.toUser()

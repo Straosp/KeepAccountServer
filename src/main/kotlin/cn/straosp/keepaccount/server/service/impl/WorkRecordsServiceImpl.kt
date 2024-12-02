@@ -209,15 +209,19 @@ class WorkRecordsServiceImpl : WorkRecordsService {
             2 -> {
                 val workRecordsByMonth = workRecordsRangeDate.groupBy { it.workDate.toLocalDate().monthValue }
                 return workRecordsByMonth.map { keys ->
-                    val singleQuantity = keys.value.filter { it.singleQuantity > 0 }.sumOf { it.singleQuantity }  // 得到的就是月内的个人件数总和
-                    val teamQuantity = keys.value.filter { it.teamSize > 1 }.sumOf { it.productQuantity }   //得到的就是团队数量总和
-                    val totalSalary = keys.value.groupBy { it.teamSize }.mapValues {teamSizeKey ->
-                        if (teamSizeKey.key == 0){
-                            teamSizeKey.value.sumOf { it.singleQuantity * it.productPrice }
+                    val totalSalary = keys.value.sumOf {
+                        if (it.teamSize > 0){
+                            if (it.singleQuantity > 0){
+                                (it.productQuantity * it.productPrice).div(it.teamSize).plus(it.productPrice * it.singleQuantity)
+                            }else{
+                                (it.productQuantity * it.productPrice).div(it.teamSize)
+                            }
                         }else{
-                            teamSizeKey.value.sumOf { (it.productPrice * it.productQuantity).plus(it.singleQuantity * it.productPrice) }.div(teamSizeKey.key)
+                            it.singleQuantity.times(it.productPrice)
                         }
-                    }.values.sum()
+                    }
+                    val teamQuantity = keys.value.filter { it.teamSize > 0 }.sumOf { it.productQuantity }   //得到的就是团队数量总和
+                    val singleQuantity = keys.value.filter { it.singleQuantity > 0 }.sumOf { it.singleQuantity }  // 得到的就是月内的个人件数总和
                     WorkRecordsInRangeDate(
                         totalSalary = totalSalary,
                         singleQuantity = singleQuantity,

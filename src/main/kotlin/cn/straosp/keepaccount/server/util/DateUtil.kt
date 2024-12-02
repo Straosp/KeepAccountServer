@@ -30,7 +30,7 @@ fun isLeapYearAndFebruaryDays(year: Int): Pair<Boolean, Int> {
 }
 
 fun getCurrentMonthLocalDate():Pair<LocalDate,LocalDate> {
-    val localDate = LocalDate.now()
+    val localDate = LocalDate.now(ZoneId.of("GMT+8"))
     val year = localDate.year
     val monthV = localDate.monthValue
     return  Pair(first = LocalDate.of(year,monthV, 1), second = LocalDate.of(year, monthV,monthV.dayOfMonth(year)))

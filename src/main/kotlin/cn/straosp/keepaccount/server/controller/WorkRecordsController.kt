@@ -23,19 +23,15 @@ fun Routing.workRecordsController(){
                     call.respond(RequestResult.parameterError())
                     return@post
                 }
-                if (records.singleQuantity > 0 && records.productQuantity > 0  && records.teamSize < 2){
-                    call.respond(RequestResult.parameterError())
-                    return@post
-                }
-                if (records.singleQuantity < 1 && records.productQuantity < 1){
-                    call.respond(RequestResult.parameterError())
-                    return@post
-                }
                 if (records.productPrice < 0.1){
                     call.respond(RequestResult.parameterError())
                     return@post
                 }
                 if (records.workDate.isEmpty()){
+                    call.respond(RequestResult.parameterError())
+                    return@post
+                }
+                if (records.singleQuantity == .0 && records.productQuantity == .0){
                     call.respond(RequestResult.parameterError())
                     return@post
                 }

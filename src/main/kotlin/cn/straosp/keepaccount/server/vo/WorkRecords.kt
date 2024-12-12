@@ -35,10 +35,10 @@ data class WorkRecordsResult(
 
 @Serializable
 data class AddWorkRecords(
-    val teamSize:Int,
-    val productQuantity:Double,
+    val teamSize:Int? = 0,
+    val productQuantity:Double = .0,
     val productPrice:Double,
-    val singleQuantity:Double,
+    val singleQuantity:Double = .0,
     val workDate:String,
 )
 
